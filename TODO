@@ -1,0 +1,7 @@
+Add GMP support for the iteration number
+
+Add a lot of parameters for functions
+
+Add the file parsing support
+
+Fix networks with more than 1 hidden layer
