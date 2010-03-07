@@ -1,0 +1,16 @@
+This is NeuralNetWorker, a fast and simple program to work with
+feed-forward neural networks. Authors hope that this program will
+be useful and comfortable for many applications, if not you can 
+send to the current mantainer a protest email.
+
+The aim of the program is to be used from a shell (expecially on
+the Bash). If you want to use it as a library do it at your own
+risk.
+
+NeuralNetWorker is provided "as is" with no warranty.  The exact
+terms under which you may use and (re)distribute this program are
+detailed in the GNU General Public License, in the file COPYING.
+
+See the files AUTHORS for a list of authors and other contributors.
+
+Send bug reports to the current mantainer.
