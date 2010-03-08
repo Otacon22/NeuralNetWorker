@@ -8,13 +8,13 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Foobar is distributed in the hope that it will be useful,
+    NeuralNetworker is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+    along with NeuralNetWorker.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -181,10 +181,10 @@ void weightsDeallocatorHiddenMomentum(int start1, int start2)
 {
     int i,j;
     
-    if ( start1 == -1 )
+    if (start1 == -1)
         start1 = neuralNetwork.hiddenLayers - 2;
     
-    if ( start2 == -1 )
+    if (start2 == -1)
         start2 = neuralNetwork.hiddenNeurons + neuralNetwork.hiddenBias - 1;
     
     for (i=start1;i>=0;i--)
@@ -217,7 +217,7 @@ void weightsDeallocatorOutputMomentum(int start)
 {
     int i;
     
-    if ( start == -1 )
+    if (start == -1)
         start = neuralNetwork.hiddenNeurons + neuralNetwork.hiddenBias -1;
     for (i=start;i>=0;i--)
         free(neuralNetwork.outputMomentum[i]);
@@ -324,7 +324,6 @@ int weightsAllocator()
                 }
             }
         }
-
     }
     
     /* Hidden-Output area (Weights) */
@@ -371,7 +370,7 @@ void activationDeallocatorInput()
 void activationDeallocatorHidden(int start) 
 {
     int i;
-    if ( start == -1 )
+    if (start == -1)
         start = neuralNetwork.hiddenLayers-1;
     
     for (i=start;i>=0;i--)
@@ -404,12 +403,12 @@ int activationAllocator()
     /* Input layer */
     
     neuralNetwork.inputActivation = malloc(sizeof(networkPrecision)*(neuralNetwork.inputNeurons + neuralNetwork.inputBias));
-    if ( neuralNetwork.inputActivation == NULL )
+    if (neuralNetwork.inputActivation == NULL)
         return 1;
     
     /* Hidden layer */
     neuralNetwork.hiddenActivation = malloc(sizeof(networkPrecision *)*neuralNetwork.hiddenLayers);
-    if ( neuralNetwork.hiddenActivation == NULL )
+    if (neuralNetwork.hiddenActivation == NULL)
     {
         activationDeallocatorInput();
         return 1;
@@ -427,7 +426,7 @@ int activationAllocator()
     
     /* Output layer */
     neuralNetwork.outputActivation = malloc(sizeof(networkPrecision)*(neuralNetwork.outputNeurons));
-    if ( neuralNetwork.outputActivation == NULL )
+    if (neuralNetwork.outputActivation == NULL)
     {
         activationDeallocatorHidden(-1);
         return 1;
@@ -441,10 +440,10 @@ void setBias()
     /* This sets to 1 all bias neurons*/
     int i;
     
-    if ( neuralNetwork.useInputBias == True )
+    if (neuralNetwork.useInputBias == True)
         neuralNetwork.inputActivation[neuralNetwork.inputNeurons] = neuralNetwork.inputBiasValue;
     
-    if ( neuralNetwork.useHiddenBias == True )
+    if (neuralNetwork.useHiddenBias == True)
         for (i=0;i<neuralNetwork.hiddenLayers;i++)
             neuralNetwork.hiddenActivation[i][neuralNetwork.hiddenNeurons] = neuralNetwork.hiddenBiasValue;
     
@@ -500,20 +499,20 @@ void updateNetwork()
     for (i=0;i<(neuralNetwork.hiddenNeurons);i++)
     {
         sum = 0.0;
-        for (j=0;j<(neuralNetwork.inputNeurons+neuralNetwork.inputBias);j++)
+        for (j=0;j<(neuralNetwork.inputNeurons + neuralNetwork.inputBias);j++)
             sum = sum + (neuralNetwork.inputWeights[j][i]*neuralNetwork.inputActivation[j]);
-        neuralNetwork.hiddenActivation[0][i] = neuralNetwork.function(sum); /* Correct? */
+        neuralNetwork.hiddenActivation[0][i] = neuralNetwork.function(sum);
     }
     
     if (neuralNetwork.hiddenLayers > 1)
     {
         /* Calculate new activation values for the optionals hidden layers */
-        for (i=0;i<(neuralNetwork.hiddenLayers-1);i++) 
+        for (i=0;i<(neuralNetwork.hiddenLayers - 1);i++) 
         {
             for (j=0;j<(neuralNetwork.hiddenNeurons);j++)
             {
                 sum = 0.0;
-                for (k=0;k<(neuralNetwork.hiddenNeurons+neuralNetwork.hiddenBias);k++)
+                for (k=0;k<(neuralNetwork.hiddenNeurons + neuralNetwork.hiddenBias);k++)
                     sum = sum + (neuralNetwork.hiddenWeights[i][k][j]*neuralNetwork.hiddenActivation[i][k]);
                 neuralNetwork.hiddenActivation[i][j] = neuralNetwork.function(sum);
             }
@@ -524,9 +523,9 @@ void updateNetwork()
     for (i=0;i<(neuralNetwork.outputNeurons);i++)
     {
         sum = 0.0;
-        for (j=0;j<(neuralNetwork.hiddenNeurons+neuralNetwork.hiddenBias);j++)
+        for (j=0;j<(neuralNetwork.hiddenNeurons + neuralNetwork.hiddenBias);j++)
             sum = sum + (neuralNetwork.outputWeights[j][i]*
-                neuralNetwork.hiddenActivation[neuralNetwork.hiddenLayers-1][j]);
+                neuralNetwork.hiddenActivation[neuralNetwork.hiddenLayers - 1][j]);
         neuralNetwork.outputActivation[i] = neuralNetwork.function(sum);
     }
 }
@@ -535,11 +534,12 @@ void deltaDeallocatorHidden(int start)
 {
     int i;
     
-    if ( start == -1 )
+    if (start == -1)
         start = neuralNetwork.hiddenLayers - 1;
     
     for (i=start;i>=0;i--)
         free(neuralNetwork.hiddenDeltas[i]);
+    
     free(neuralNetwork.hiddenDeltas);
 }
 
@@ -563,10 +563,10 @@ int deltaAllocator()
     
     /* Hidden layer */
     neuralNetwork.hiddenDeltas = malloc(sizeof(networkPrecision *)*neuralNetwork.hiddenLayers);
-    if ( neuralNetwork.hiddenDeltas == NULL )
+    if (neuralNetwork.hiddenDeltas == NULL)
         return 1;
     
-    for (i=0; i<neuralNetwork.hiddenLayers; i++)
+    for (i=0;i<neuralNetwork.hiddenLayers;i++)
     {
         neuralNetwork.hiddenDeltas[i] = malloc(sizeof(networkPrecision)*(neuralNetwork.hiddenNeurons));
         if ( neuralNetwork.hiddenDeltas[i] == NULL )
@@ -578,7 +578,7 @@ int deltaAllocator()
     
     /* Output layer */
     neuralNetwork.outputDeltas = malloc(sizeof(networkPrecision)*(neuralNetwork.outputNeurons));
-    if ( neuralNetwork.outputDeltas == NULL )
+    if (neuralNetwork.outputDeltas == NULL)
     {
         deltaDeallocatorHidden(-1);
         return 1;
@@ -598,8 +598,8 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
     /* Output deltas */
     for (j=0;j<neuralNetwork.outputNeurons;j++)
     {
-        error = ( networkExamples.outputs[i][j] - neuralNetwork.outputActivation[j] );
-        neuralNetwork.outputDeltas[j] = ( neuralNetwork.derivedFunction(neuralNetwork.outputActivation[j]) * error );
+        error = (networkExamples.outputs[i][j] - neuralNetwork.outputActivation[j]);
+        neuralNetwork.outputDeltas[j] = (neuralNetwork.derivedFunction(neuralNetwork.outputActivation[j]) * error);
     }
     
     /* Hidden deltas */
@@ -612,7 +612,7 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
             error = error + neuralNetwork.outputDeltas[k]*neuralNetwork.outputWeights[j][k];
         }
         neuralNetwork.hiddenDeltas[neuralNetwork.hiddenLayers-1][j] =
-            ( neuralNetwork.derivedFunction(neuralNetwork.hiddenActivation[neuralNetwork.hiddenLayers-1][j]) * error );
+            (neuralNetwork.derivedFunction(neuralNetwork.hiddenActivation[neuralNetwork.hiddenLayers-1][j]) * error);
     }
     
     /* If the net does have more than 1 hidden layer */
@@ -628,7 +628,7 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
                     error = error + neuralNetwork.hiddenDeltas[h+1][k]*neuralNetwork.hiddenWeights[h][j][k];
                 }
                 neuralNetwork.hiddenDeltas[h][j] = 
-                    ( neuralNetwork.derivedFunction(neuralNetwork.hiddenActivation[h][j]) * error );
+                    (neuralNetwork.derivedFunction(neuralNetwork.hiddenActivation[h][j]) * error);
             }
         }
     }
@@ -639,9 +639,9 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
     {
         for (k=0;k<(neuralNetwork.outputNeurons);k++)
         {
-            change = neuralNetwork.outputDeltas[k]*neuralNetwork.hiddenActivation[neuralNetwork.hiddenLayers-1][j];
+            change = neuralNetwork.outputDeltas[k] * neuralNetwork.hiddenActivation[neuralNetwork.hiddenLayers-1][j];
             neuralNetwork.outputWeights[j][k] = neuralNetwork.outputWeights[j][k] +
-                ( learningRate*change ) + ( momentumFactor*neuralNetwork.outputMomentum[j][k] );
+                (learningRate * change) + (momentumFactor * neuralNetwork.outputMomentum[j][k]);
             neuralNetwork.outputMomentum[j][k] = change;
         }
     }
@@ -649,7 +649,7 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
     /* Change network weights Hidden-Hidden */
     if (neuralNetwork.hiddenLayers > 1)
     {
-        for (h=(neuralNetwork.hiddenLayers-2);h>=0;h--)
+        for (h=(neuralNetwork.hiddenLayers - 2);h>=0;h--)
         {
             for (j=0;j<(neuralNetwork.hiddenNeurons + neuralNetwork.hiddenBias);j++)
             {
@@ -657,7 +657,7 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
                 {
                     change = neuralNetwork.hiddenDeltas[h+1][k]*neuralNetwork.hiddenActivation[h][j];
                     neuralNetwork.hiddenWeights[h][j][k] = neuralNetwork.hiddenWeights[h][j][k] 
-                        + ( learningRate*change ) + ( momentumFactor*neuralNetwork.hiddenMomentum[h][j][k] );
+                        + (learningRate * change ) + (momentumFactor * neuralNetwork.hiddenMomentum[h][j][k]);
                     neuralNetwork.hiddenMomentum[h][j][k] = change;
                 }
             }
@@ -671,7 +671,7 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
         {
             change = neuralNetwork.hiddenDeltas[0][j]*neuralNetwork.inputActivation[k];
             neuralNetwork.inputWeights[k][j] = neuralNetwork.inputWeights[k][j] 
-                + ( learningRate*change ) + ( momentumFactor*neuralNetwork.inputMomentum[k][j] );
+                + (learningRate * change) + (momentumFactor * neuralNetwork.inputMomentum[k][j]);
             neuralNetwork.inputMomentum[k][j] = change;
         }
     }
@@ -680,7 +680,7 @@ errorPrecision backPropagation(float learningRate, float momentumFactor, int i)
     totalerror = 0.0;
     for (k=0;k<neuralNetwork.outputNeurons;k++)
         totalerror = totalerror + 0.5*
-            ((errorPrecision) pow((networkExamples.outputs[i][k]-neuralNetwork.outputActivation[k]), 2));
+            ((errorPrecision) pow((networkExamples.outputs[i][k] - neuralNetwork.outputActivation[k]), 2.0));
     
     return totalerror;
     
@@ -698,11 +698,11 @@ errorPrecision trainNetwork(float learningRate, float momentumFactor, int iterat
     {
         k++;
         error = 0.0;
-        for (i=0;i < networkExamples.quantity;i++)
+        for (i=0;i<networkExamples.quantity;i++)
         {
             /* Insert the current example in the network and then call the update function */
             /* I'm supposing that examples are in the correct number */
-            for (j=0;j<(neuralNetwork.inputNeurons);j++)
+            for (j=0;j<neuralNetwork.inputNeurons;j++)
                 neuralNetwork.inputActivation[j] = networkExamples.inputs[i][j];
             updateNetwork();
             error = error + backPropagation(learningRate, momentumFactor, i);
@@ -716,7 +716,7 @@ errorPrecision trainNetwork(float learningRate, float momentumFactor, int iterat
                     printf("\n");
             }
     }
-    while (error>minError && k!=iterations);
+    while ((error > minError) && (k != iterations));
     
     return error;
     
@@ -730,7 +730,8 @@ int main(int argc, char *argv[])
      * network parameters are right.
      */
     int b,c;
-    int iterations=-1;
+    int iterations = -1;
+    int seed = 0;
     errorPrecision error, required=0.0;
     time_t rawtime1, rawtime2;
     int option_index = 0;
@@ -739,12 +740,12 @@ int main(int argc, char *argv[])
         { "verbose",	no_argument,	        NULL, 'v' },
         { "error",	required_argument,	NULL, 'e' },
         { "iterations",	required_argument,	NULL, 'i' },
+        { "random-seed",required_argument,	NULL, 'r' },
 	{ 0, 0, 0, 0 }
     };
     
-    srand(0);
     do {
-        c = getopt_long(argc, argv, "hve:i:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hve:i:r:", long_options, &option_index);
         switch (c)
         {
             case 'h':
@@ -754,6 +755,7 @@ int main(int argc, char *argv[])
                 printf("\t--verbose or -v\t\t\t\t: Verbose mode\n");
                 printf("\t--error [value] or -e [value]\t\t: Sets the error required\n");
                 printf("\t--iterations [value] or -i [value]\t: Sets the number of iterations to be done\n");
+                printf("\t--randrom-seed [value] or -r [value]\t\t: Sets the random seed\n");
                 exit(0);
                 break;
             case 'v':
@@ -775,6 +777,15 @@ int main(int argc, char *argv[])
                     exit(1);
                 }
                 break;
+            case 'r':
+                /* TODO: It's missing the check for the time seed option */
+                seed = atoi(optarg);
+                if (seed < 0)
+                {
+                    printf("Invalid value for the --random-seed parameter\n");
+                    exit(1);
+                }
+                break;
         }
     }
     while (c!=-1);
@@ -783,6 +794,8 @@ int main(int argc, char *argv[])
         printf("NeuralNetWorker - Version %s\nUsage: nnw [-options]\n\n", VERSION);
         exit(0);
     }
+    
+    /* Debugging XOR part */
     neuralNetwork.inputNeurons = 2;
     neuralNetwork.hiddenNeurons = 2;
     neuralNetwork.outputNeurons = 1;
@@ -797,6 +810,8 @@ int main(int argc, char *argv[])
 
     neuralNetwork.function = transferFunction_Tanh;
     neuralNetwork.derivedFunction = transferFunction_TanhDerived;
+    
+    srand(seed);
     
     neuralNetwork.inputWeightsValue = randomizer;
     neuralNetwork.hiddenWeightsValue = randomizer2;
