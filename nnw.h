@@ -15,12 +15,55 @@
 
     You should have received a copy of the GNU General Public License
     along with NeuralNetWorker.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
 typedef double networkPrecision;
 typedef double errorPrecision;
+typedef enum {False, True} boolean;
 
+struct {
+    int inputNeurons;
+    int hiddenNeurons;
+    int outputNeurons;
+    int hiddenLayers;
+    
+    boolean useInputBias;
+    boolean useHiddenBias;
+    boolean useMomentum;
+    
+    int inputBias;
+    int hiddenBias;
+    
+    networkPrecision inputBiasValue;
+    networkPrecision hiddenBiasValue;
+    
+    networkPrecision *inputActivation;
+    networkPrecision **hiddenActivation;
+    networkPrecision *outputActivation;
+    
+    networkPrecision **inputWeights;
+    networkPrecision ***hiddenWeights;
+    networkPrecision **outputWeights;
+    
+    networkPrecision **inputMomentum;
+    networkPrecision ***hiddenMomentum;
+    networkPrecision **outputMomentum;
+    
+    networkPrecision **hiddenDeltas;
+    networkPrecision *outputDeltas;
+    
+    networkPrecision (*function)(networkPrecision); 
+    networkPrecision (*derivedFunction)(networkPrecision);
+    networkPrecision (*inputWeightsValue)();
+    networkPrecision (*hiddenWeightsValue)();
+    networkPrecision (*outputWeightsValue)();
+} neuralNetwork;    
+
+struct {
+    int quantity; /* This specify how much examples there are */
+    networkPrecision **inputs;
+    networkPrecision **outputs;
+} networkExamples;
 
 /* Functions prototypes area */
 networkPrecision randomGenerator(double, double);

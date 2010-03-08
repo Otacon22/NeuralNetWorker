@@ -15,7 +15,6 @@
 
     You should have received a copy of the GNU General Public License
     along with NeuralNetWorker.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
 #include <stdio.h>
@@ -23,59 +22,16 @@
 #include <math.h>
 #include <time.h>
 #include <getopt.h>
+#include <string.h>
 
 #include "nnw.h"
+#include "parser.h"
 
 #define VERSION         "0.1"
 
 
-
-typedef enum {False, True} boolean;
 int verbose = 0;
 
-struct {
-    int inputNeurons;
-    int hiddenNeurons;
-    int outputNeurons;
-    int hiddenLayers;
-    
-    boolean useInputBias;
-    boolean useHiddenBias;
-    boolean useMomentum;
-    
-    int inputBias;
-    int hiddenBias;
-    
-    networkPrecision inputBiasValue;
-    networkPrecision hiddenBiasValue;
-    
-    networkPrecision *inputActivation;
-    networkPrecision **hiddenActivation;
-    networkPrecision *outputActivation;
-    
-    networkPrecision **inputWeights;
-    networkPrecision ***hiddenWeights;
-    networkPrecision **outputWeights;
-    
-    networkPrecision **inputMomentum;
-    networkPrecision ***hiddenMomentum;
-    networkPrecision **outputMomentum;
-    
-    networkPrecision **hiddenDeltas;
-    networkPrecision *outputDeltas;
-    
-    networkPrecision (*function)(networkPrecision); 
-    networkPrecision (*derivedFunction)(networkPrecision);
-    networkPrecision (*inputWeightsValue)();
-    networkPrecision (*hiddenWeightsValue)();
-    networkPrecision (*outputWeightsValue)();
-} neuralNetwork;    
-
-struct {
-    int quantity; /* This specify how much examples there are */
-    networkPrecision **inputs;
-    networkPrecision **outputs;
-} networkExamples;
 
 networkPrecision randomGenerator(double min, double max)
 {
@@ -437,7 +393,7 @@ int activationAllocator()
 
 void setBias()
 {
-    /* This sets to 1 all bias neurons*/
+    /* This sets to 1 all bias neurons. This MUST be changed if we want the support for more than one bias*/
     int i;
     
     if (neuralNetwork.useInputBias == True)
@@ -732,20 +688,28 @@ int main(int argc, char *argv[])
     int b,c;
     int iterations = -1;
     int seed = 0;
+    FILE *fd;
+    char *netfile = NULL;
+    int option_index = 0;
+    boolean xordebug = False; /******************************************/
+    
     errorPrecision error, required=0.0;
     time_t rawtime1, rawtime2;
-    int option_index = 0;
+    
     static const struct option long_options[] = {
 	{ "help", 	no_argument,	        NULL, 'h' },
         { "verbose",	no_argument,	        NULL, 'v' },
         { "error",	required_argument,	NULL, 'e' },
         { "iterations",	required_argument,	NULL, 'i' },
         { "random-seed",required_argument,	NULL, 'r' },
+        { "netfile",    required_argument,	NULL, 'n' },
+        { "xor-debug",  no_argument,	        NULL, 'x' },
 	{ 0, 0, 0, 0 }
     };
     
+    
     do {
-        c = getopt_long(argc, argv, "hve:i:r:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hve:i:r:n:x", long_options, &option_index);
         switch (c)
         {
             case 'h':
@@ -755,7 +719,9 @@ int main(int argc, char *argv[])
                 printf("\t--verbose or -v\t\t\t\t: Verbose mode\n");
                 printf("\t--error [value] or -e [value]\t\t: Sets the error required\n");
                 printf("\t--iterations [value] or -i [value]\t: Sets the number of iterations to be done\n");
-                printf("\t--randrom-seed [value] or -r [value]\t\t: Sets the random seed\n");
+                printf("\t--randrom-seed [value] or -r [value]\t: Sets the random seed.\n");
+                printf("\t\t\t\t\t\t  If [value] is \"time\" the seed will be random.\n");
+                printf("\t\t\t\t\t\t  Default [value] is 0\n");
                 exit(0);
                 break;
             case 'v':
@@ -778,122 +744,229 @@ int main(int argc, char *argv[])
                 }
                 break;
             case 'r':
-                /* TODO: It's missing the check for the time seed option */
-                seed = atoi(optarg);
-                if (seed < 0)
+                if (strcmp(optarg,"time")==0)
                 {
-                    printf("Invalid value for the --random-seed parameter\n");
+                    seed = time(NULL);
+                }
+                else
+                {
+                    seed = atoi(optarg);
+                    /* TODO: Check here if the converted number is not a string of letters*/
+                    if (strstr(optarg,".") != NULL)
+                    {
+                        /* TODO: Create a function for error messages */
+                        printf("Invalid value for the --random-seed parameter: value must be an integer\n");
+                        exit(1);
+                    }
+                    if (seed < 0)
+                    {
+                        printf("Invalid value for the --random-seed parameter\n");
+                        exit(1);
+                    }
+                }
+                break;
+            case 'n':
+                /* use malloc? */
+                netfile = malloc(sizeof(char)*(strlen(optarg)+1)); /* Also \0 */
+                if (netfile == NULL)
+                {
+                    printf("Generic error in the network file\n");
                     exit(1);
                 }
+                strcpy(netfile,optarg);
+                break;
+            case 'x':
+                xordebug = True;
                 break;
         }
     }
-    while (c!=-1);
-    if (argc==1)
+    while (c != -1);
+    if (argc == 1)
     {
         printf("NeuralNetWorker - Version %s\nUsage: nnw [-options]\n\n", VERSION);
         exit(0);
     }
     
-    /* Debugging XOR part */
-    neuralNetwork.inputNeurons = 2;
-    neuralNetwork.hiddenNeurons = 2;
-    neuralNetwork.outputNeurons = 1;
-    neuralNetwork.hiddenLayers = 1;
-    
-    neuralNetwork.useHiddenBias = True;
-    neuralNetwork.useInputBias = True;
-    neuralNetwork.useMomentum = True; 
-    
-    neuralNetwork.inputBiasValue = 1.0;
-    neuralNetwork.hiddenBiasValue = 1.0;
-
-    neuralNetwork.function = transferFunction_Tanh;
-    neuralNetwork.derivedFunction = transferFunction_TanhDerived;
-    
     srand(seed);
     
-    neuralNetwork.inputWeightsValue = randomizer;
-    neuralNetwork.hiddenWeightsValue = randomizer2;
-    neuralNetwork.outputWeightsValue = randomizer2;
+    if (xordebug == True)
+    {
+        neuralNetwork.inputNeurons = 2;
+        neuralNetwork.hiddenNeurons = 2;
+        neuralNetwork.outputNeurons = 1;
+        neuralNetwork.hiddenLayers = 1;
     
-    /* Bias neurons presence */
-    if (neuralNetwork.useInputBias == True)
-        neuralNetwork.inputBias = 1;
+        neuralNetwork.useHiddenBias = True;
+        neuralNetwork.useInputBias = True;
+        neuralNetwork.useMomentum = True; 
+    
+        neuralNetwork.inputBiasValue = 1.0;
+        neuralNetwork.hiddenBiasValue = 1.0;
+        
+        neuralNetwork.function = transferFunction_Tanh;
+        neuralNetwork.derivedFunction = transferFunction_TanhDerived;
+        
+        neuralNetwork.inputWeightsValue = randomizer;
+        neuralNetwork.hiddenWeightsValue = randomizer2;
+        neuralNetwork.outputWeightsValue = randomizer2;
+        
+        if (neuralNetwork.useInputBias == True)
+            neuralNetwork.inputBias = 1;
+        else
+            neuralNetwork.inputBias = 0;
+        
+        if (neuralNetwork.useHiddenBias == True)
+            neuralNetwork.hiddenBias = 1;
+        else
+            neuralNetwork.hiddenBias = 0;
+        
+        if (activationAllocator() != 0)
+            exit(1);
+        if (weightsAllocator() != 0)
+        {
+            activationDeallocator();
+            exit(1);
+        }
+        if (deltaAllocator() != 0)
+        {
+            activationDeallocator();
+            weightsDeallocator();
+            exit(1);
+        }
+        
+        setBias();
+        flushWeights();
+        
+        networkExamples.quantity = 4;
+        networkExamples.inputs = malloc(sizeof(double *)*4);
+        networkExamples.outputs = malloc(sizeof(double *)*4);
+        for (b=0;b<4;b++)
+        {
+            networkExamples.inputs[b] = malloc(sizeof(double)*2);
+            networkExamples.outputs[b] = malloc(sizeof(double));
+        }
+        networkExamples.inputs[0][0] = 0.0;
+        networkExamples.inputs[0][1] = 0.0;
+        networkExamples.outputs[0][0] = 0.0;
+        
+        networkExamples.inputs[1][0] = 0.0;
+        networkExamples.inputs[1][1] = 1.0;
+        networkExamples.outputs[1][0] = 1.0;
+        
+        networkExamples.inputs[2][0] = 1.0;
+        networkExamples.inputs[2][1] = 0.0;
+        networkExamples.outputs[2][0] = 1.0;
+        
+        networkExamples.inputs[3][0] = 1.0;
+        networkExamples.inputs[3][1] = 1.0;
+        networkExamples.outputs[3][0] = 0.0;
+        
+        time(&rawtime1);
+        error = trainNetwork(0.5, 0.1, iterations, required);
+        time(&rawtime2);
+        
+        printf("Training completed.\n Network error: %e\n Time elapsed: %d seconds\n", error, (int) (rawtime2-rawtime1));
+        
+        neuralNetwork.inputActivation[0] = 1.0;
+        neuralNetwork.inputActivation[1] = 0.0;
+        updateNetwork();
+        printf("Output with 1 and 0 (waiting 1) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
+        neuralNetwork.inputActivation[0] = 0.0;
+        neuralNetwork.inputActivation[1] = 1.0;
+        updateNetwork();
+        printf("Output with 0 and 1 (waiting 1) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
+        neuralNetwork.inputActivation[0] = 0.0;
+        neuralNetwork.inputActivation[1] = 0.0;
+        updateNetwork();
+        printf("Output with 0 and 0 (waiting 0) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
+        neuralNetwork.inputActivation[0] = 1.0;
+        neuralNetwork.inputActivation[1] = 1.0;
+        updateNetwork();
+        printf("Output with 1 and 1 (waiting 0) -> %.16f\n",neuralNetwork.outputActivation[0]);
+    }
+    
     else
-        neuralNetwork.inputBias = 0;
-    
-    if (neuralNetwork.useHiddenBias == True)
-        neuralNetwork.hiddenBias = 1;
-    else
-        neuralNetwork.hiddenBias = 0;
-    
-    if (activationAllocator() != 0)
-        exit(1);
-    if (weightsAllocator() != 0)
     {
-        activationDeallocator();
-        exit(1);
+    
+        fd = fopen(netfile, "r");
+        if (fd == NULL)
+        {
+            printf("Error while opening network file\n");
+            exit(1);
+        }
+        
+        
+        if (netFileHeaderParser(fd) != 0)
+        {
+            printf("Errors in net file parsing: invalid file\n");
+            exit(1);
+        }
+        
+        neuralNetwork.inputBiasValue = 1.0;
+        neuralNetwork.hiddenBiasValue = 1.0;
+
+        neuralNetwork.function = transferFunction_Tanh;
+        neuralNetwork.derivedFunction = transferFunction_TanhDerived;
+        
+        neuralNetwork.inputWeightsValue = randomizer;
+        neuralNetwork.hiddenWeightsValue = randomizer2;
+        neuralNetwork.outputWeightsValue = randomizer2;
+
+        
+        if (activationAllocator() != 0)
+            exit(1);
+        if (weightsAllocator() != 0)
+        {
+            activationDeallocator();
+            exit(1);
+        }
+        if (deltaAllocator() != 0)
+        {
+            activationDeallocator();
+            weightsDeallocator();
+            exit(1);
+        }
+    
+        setBias();
+        flushWeights();
+        
+        /* Here the function wich pick up weights from the file */
+        if (netFileParser(fd) != 0)
+        {
+            printf("Errors in net file parsing: invalid file\n");
+            exit(1);
+        }
+        fclose(fd);
+        
+        /******************* XOR *******************/
+        printf("XOR  test:\n");
+        
+        neuralNetwork.inputActivation[0] = 1.0;
+        neuralNetwork.inputActivation[1] = 0.0;
+        updateNetwork();
+        printf("Output with 1 and 0 (waiting 1) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
+        neuralNetwork.inputActivation[0] = 0.0;
+        neuralNetwork.inputActivation[1] = 1.0;
+        updateNetwork();
+        printf("Output with 0 and 1 (waiting 1) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
+        neuralNetwork.inputActivation[0] = 0.0;
+        neuralNetwork.inputActivation[1] = 0.0;
+        updateNetwork();
+        printf("Output with 0 and 0 (waiting 0) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
+        neuralNetwork.inputActivation[0] = 1.0;
+        neuralNetwork.inputActivation[1] = 1.0;
+        updateNetwork();
+        printf("Output with 1 and 1 (waiting 0) -> %.16f\n",neuralNetwork.outputActivation[0]);
+        
     }
-    if (deltaAllocator() != 0)
-    {
-        activationDeallocator();
-        weightsDeallocator();
-        exit(1);
-    }
     
-    setBias();
-    flushWeights();
     
-    networkExamples.quantity = 4;
-    networkExamples.inputs = malloc(sizeof(double *)*4);
-    networkExamples.outputs = malloc(sizeof(double *)*4);
-    for (b=0;b<4;b++)
-    {
-        networkExamples.inputs[b] = malloc(sizeof(double)*2);
-        networkExamples.outputs[b] = malloc(sizeof(double));
-    }
-    networkExamples.inputs[0][0] = 0.0;
-    networkExamples.inputs[0][1] = 0.0;
-    networkExamples.outputs[0][0] = 0.0;
-    
-    networkExamples.inputs[1][0] = 0.0;
-    networkExamples.inputs[1][1] = 1.0;
-    networkExamples.outputs[1][0] = 1.0;
-    
-    networkExamples.inputs[2][0] = 1.0;
-    networkExamples.inputs[2][1] = 0.0;
-    networkExamples.outputs[2][0] = 1.0;
-    
-    networkExamples.inputs[3][0] = 1.0;
-    networkExamples.inputs[3][1] = 1.0;
-    networkExamples.outputs[3][0] = 0.0;
-    
-    time(&rawtime1);
-    error = trainNetwork(0.5, 0.1, iterations, required);
-    time(&rawtime2);
-    
-    printf("Training completed.\n Network error: %e\n Time elapsed: %d seconds\n", error, (int) (rawtime2-rawtime1));
-    
-    neuralNetwork.inputActivation[0] = 1.0;
-    neuralNetwork.inputActivation[1] = 0.0;
-    updateNetwork();
-    printf("Output with 1 and 0 (waiting 1) -> %.16f\n",neuralNetwork.outputActivation[0]);
-    
-    neuralNetwork.inputActivation[0] = 0.0;
-    neuralNetwork.inputActivation[1] = 1.0;
-    updateNetwork();
-    printf("Output with 0 and 1 (waiting 1) -> %.16f\n",neuralNetwork.outputActivation[0]);
-    
-    neuralNetwork.inputActivation[0] = 0.0;
-    neuralNetwork.inputActivation[1] = 0.0;
-    updateNetwork();
-    printf("Output with 0 and 0 (waiting 0) -> %.16f\n",neuralNetwork.outputActivation[0]);
-    
-    neuralNetwork.inputActivation[0] = 1.0;
-    neuralNetwork.inputActivation[1] = 1.0;
-    updateNetwork();
-    printf("Output with 1 and 1 (waiting 0) -> %.16f\n",neuralNetwork.outputActivation[0]);
     
     /* Deallocation part */
     activationDeallocator();
