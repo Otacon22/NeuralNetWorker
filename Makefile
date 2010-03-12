@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -Wall --pedantic
+FLAGS = -Wall --pedantic -O2 -march=native
 LIBS = -lm
 
 all: program
