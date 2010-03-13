@@ -5,3 +5,9 @@ Add a lot of parameters for functions
 Add the file parsing support
 
 Fix networks with more than 1 hidden layer
+
+Add a separate normalizer
+
+Try to add a library support
+
+Auto matching in example the number of input/outputs
