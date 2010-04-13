@@ -11,3 +11,5 @@ Add a separate normalizer
 Try to add a library support
 
 Auto matching in example the number of input/outputs
+
+Add the support for pipeline data
